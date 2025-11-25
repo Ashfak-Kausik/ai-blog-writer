@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
@@ -11,10 +11,27 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.')); // Serve static files from current directory
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY
-});
+// Initialize Gemini client
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// List available models on startup
+async function listModels() {
+    try {
+        const models = await genAI.listModels();
+        console.log('Available models:');
+        for await (const model of models) {
+            console.log('  -', model.name);
+        }
+    } catch (error) {
+        console.error('Error listing models:', error.message);
+    }
+}
+
+// Call this to see available models
+listModels();
+
+// Try different model names - one of these should work
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
 
 // API endpoint to generate blog
 app.post('/api/generate-blog', async (req, res) => {
@@ -43,17 +60,10 @@ app.post('/api/generate-blog', async (req, res) => {
 
         console.log('Generating blog post for topic:', topic);
 
-        // Call Claude API
-        const message = await anthropic.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4000,
-            messages: [{
-                role: 'user',
-                content: prompt
-            }]
-        });
-
-        const blogContent = message.content[0].text;
+        // Call Gemini API
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const blogContent = response.text();
 
         res.json({ 
             success: true, 
@@ -86,12 +96,11 @@ app.post('/api/send-to-docs', async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ content })
+            body: JSON.stringify({ content }),
+            redirect: 'follow'
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to send to Google Docs');
-        }
+        const data = await response.text();
 
         res.json({ 
             success: true, 
@@ -110,5 +119,6 @@ app.post('/api/send-to-docs', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 AI Blog Writer server running at http://localhost:${PORT}`);
-    console.log(`📝 Open http://localhost:${PORT} in your browser`);
+    console.log(`📝 Open http://localhost:3000 in your browser`);
+    console.log(`✨ Using Google Gemini AI (FREE)`);
 });
