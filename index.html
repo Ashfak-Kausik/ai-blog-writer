@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Blog Writer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-btn {
+            background: #10b981;
+            color: white;
+            display: none;
+        }
+
+        .send-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .output-section {
+            display: none;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .output-header h2 {
+            color: #333;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .blog-output {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .blog-output h1, .blog-output h2, .blog-output h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #111;
+        }
+
+        .blog-output p {
+            margin-bottom: 15px;
+        }
+
+        .blog-output ul, .blog-output ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✍️ AI Blog Writer</h1>
+        <p class="subtitle">Generate professional blog posts powered by Claude AI</p>
+
+        <div class="success-message" id="successMessage"></div>
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="input-section">
+            <label for="topic">Blog Topic</label>
+            <input type="text" id="topic" placeholder="e.g., The Future of Remote Work in 2025">
+        </div>
+
+        <div class="input-section">
+            <label for="instructions">Additional Instructions (Optional)</label>
+            <textarea id="instructions" placeholder="e.g., Write in a casual tone, include statistics, focus on practical tips..."></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="generate-btn" id="generateBtn" onclick="generateBlog()">
+                🚀 Generate Blog Post
+            </button>
+            <button class="send-btn" id="sendBtn" onclick="sendToGoogleDocs()">
+                📄 Send to Google Docs
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating your blog post... This may take 30-60 seconds</p>
+        </div>
+
+        <div class="output-section" id="outputSection">
+            <div class="output-header">
+                <h2>Generated Blog Post</h2>
+                <button class="copy-btn" onclick="copyToClipboard()">📋 Copy</button>
+            </div>
+            <div class="blog-output" id="blogOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        let generatedBlog = '';
+const GOOGLE_SCRIPT_URL = ''; // We'll add this later
+
+async function generateBlog() {
+    const topic = document.getElementById('topic').value.trim();
+    const instructions = document.getElementById('instructions').value.trim();
+
+    if (!topic) {
+        showError('Please enter a blog topic');
+        return;
+    }
+
+    // Hide previous results
+    document.getElementById('outputSection').style.display = 'none';
+    document.getElementById('sendBtn').style.display = 'none';
+    hideMessages();
+
+    // Show loading
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('generateBtn').disabled = true;
+
+    try {
+        // Call our backend API
+        const response = await fetch('http://localhost:3000/api/generate-blog', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                topic: topic,
+                instructions: instructions
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to generate blog post');
+        }
+
+        const data = await response.json();
+        generatedBlog = data.blog;
+
+        // Display the blog
+        displayBlog(generatedBlog);
+        showSuccess('Blog post generated successfully!');
+        
+        // Show send to docs button
+        document.getElementById('sendBtn').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Failed to generate blog post. Make sure the server is running!');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('generateBtn').disabled = false;
+    }
+}
+
+function displayBlog(markdown) {
+    // Simple markdown to HTML conversion
+    let html = markdown
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // Bold
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Line breaks
+        .replace(/\n/g, '<br>');
+
+    // Wrap paragraphs
+    const lines = html.split('<br><br>');
+    html = lines.map(line => {
+        line = line.trim();
+        if (!line) return '';
+        if (line.startsWith('<h') || line.startsWith('<ul') || line.startsWith('<ol')) {
+            return line;
+        }
+        return `<p>${line}</p>`;
+    }).join('');
+
+    document.getElementById('blogOutput').innerHTML = html;
+    document.getElementById('outputSection').style.display = 'block';
+}
+
+async function sendToGoogleDocs() {
+    if (!GOOGLE_SCRIPT_URL) {
+        showError('Google Docs integration not yet configured. We\'ll set this up next!');
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/api/send-to-docs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                content: generatedBlog,
+                scriptUrl: GOOGLE_SCRIPT_URL
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to send to Google Docs');
+        }
+
+        const data = await response.json();
+        showSuccess(data.message);
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Failed to send to Google Docs. Please try again.');
+    }
+}
+
+function copyToClipboard() {
+    navigator.clipboard.writeText(generatedBlog);
+    showSuccess('Blog post copied to clipboard!');
+}
+
+function showSuccess(message) {
+    const el = document.getElementById('successMessage');
+    el.textContent = message;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function showError(message) {
+    const el = document.getElementById('errorMessage');
+    el.textContent = message;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function hideMessages() {
+    document.getElementById('successMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+}
+    </script>
+</body>
+</html>
