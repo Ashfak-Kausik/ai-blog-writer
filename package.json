@@ -11,10 +11,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.75",
     "@anthropic-ai/sdk": "^0.71.0",
     "@google/generative-ai": "^0.24.1",
+    "ai": "^5.0.104",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "groq-sdk": "^0.37.0"
   }
 }
